@@ -1,2 +1,2 @@
-# Arduino-FlowMeter_on_ArduLogRTC
-Arduino-FlowMeter_on_ArduLogRTC
+# Ardu-FlowMeter_on_ArduLogRTC
+Ardu-FlowMeter_on_ArduLogRTC
