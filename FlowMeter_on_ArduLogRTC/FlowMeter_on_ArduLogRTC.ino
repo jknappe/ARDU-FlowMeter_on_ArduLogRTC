@@ -15,221 +15,228 @@
 
 // INCLUDE LIBRARIES
 //---------------------------------------------------------  
-#include <Wire.h>                           //Connecting to RTC
-#include <RTClib.h>                         //Using RTC for timestamp
-  RTC_DS1307 RTC;                           //Define RTC object
+#include <Wire.h>                                               //Connecting to RTC
+#include <RTClib.h>                                             //Using RTC for timestamp
+  RTC_DS1307 RTC;                                               //Define RTC object  
+#include <SD.h>                                                 //Communicate with SD card  
+  File file;                                                    //Defining File object for SD card
+
+// DEFINE PINS
+//---------------------------------------------------------  
+const byte LEDPin = 5;                                          //LED pin 
+const byte SDPin = 10;                                          //SD pin (CS/SS)
+const byte switchPin = 3;                                       //Reed switch pin 
+
+// DEFINE VARIABLES
+//---------------------------------------------------------  
+boolean LEDState = false;                                       //Indicate LED on or off
+int LEDTimeBlink = 500;                                         //Duration of LED blink
+unsigned long LEDTimeOn = 0;                                    //Initialize counter for time LED on
+boolean switchEvent = false;                                    //Define default switch status (= disconnected)
+const int switchIncrement = 1;                                  //Increment for each switch closure
+int switchSum = 0;                                              //Initialize sum of switch closures
+boolean LogState = false;                                       //Define trigger to initate logging to data file
+int LogInterval = 60;                                           //Define interval for logging to SD card (in seconds)
+int LogDelay = 1000;                                            //Define delay to prevent multiple logging events per seconds
+unsigned long LastLogTime = 0;                                  //Initialize time since last logging
   
-#include <SD.h>  // using SD card to log data
-
-// testing parameters
-#define ECHO_TO_SERIAL 1  // echo data to terminal (on/off)
-#define WAIT_TO_START 0  // wait for terminal input (on/off)
-
-// define pins
-#define LEDPin 5  // LED on external reset button
-#define SwitchPin 8  // reed switch
-const int SDPin = 10;  // SD connected to pin 10 of logger shield
-
-// set switch variables
-boolean SwitchEvent = false;  // default switch status is disconnected
-const int SwitchIncrement = 1;  // increment for each contact/closure of switch
-int SwitchSum = 0;  // sum of switch closures
-
-// set LED variables
-boolean LEDState = false;
-int LEDTimeOnLong = 1000;
-int LEDTimeOnShort = 500;
-unsigned long LEDTimeOn = 0;  // initialize time for previous loop
-
-// set logging variables
-boolean LogState = false;  // trigger to initate logging to data file
-int LogDelay = 1000;  // delay to prevent multiple logging events per seconds
-unsigned long LastLogTime = 0;  // initialize time for previous logging
-
-// set logging file
-File data;  // ???
+//==========================================================================================
 
 
-// ERRORS
-//-------------------
+//==========================================================================================
+// VOID SETUP
+//------------------------------------------------------------------------------------------
 
-void error(char const *str)
-{
-  Serial.print("error: ");
-  Serial.println(str);    
-  digitalWrite(LEDPin, HIGH);  // red LED constant on indicates error
-  while(1);
-}
-
-
-// SETUP (RUN ONCE)
-//-------------------
-
-void setup(void) {
-  Serial.begin(9600);
+void setup() {                                                  //START PROGRAM
+  Serial.begin(9600);                                           //Set terminal baud rate to 9600  
   
-  // set pin modes
-  pinMode(LEDPin, OUTPUT);  // red LED as output
-  pinMode(SwitchPin, INPUT);  // SwitchPin as input
-    digitalWrite(SwitchPin, HIGH);  // activate internal pullup resistor
+  pinMode(switchPin, INPUT);                                    //Switch pin as input
+    digitalWrite(switchPin, HIGH);                              //Activate internal pullup resistor
 
-  // set terminal output
-  #if WAIT_TO_START
-    Serial.println("Enter any character in the command line and press ENTER to start.");
-    while (!Serial.available());
-  #endif  // WAIT_TO_START
+// INITIALIZE RTC
+//---------------------------------------------------------  
+  Wire.begin();                                                 //Start I2C communication
+  
+  Serial.print(F("Initializing RTC: "));
+  
+  if (!RTC.begin()) {                                           //IF RTC is not found
+    Serial.println(F("RTC not found."));                        //Print error message
+    while(1);                                                   //And halt program
+  }                                                             //End IF    
+  Serial.println(F("successful")); 
+  
+  if (!RTC.isrunning()) {                                       //IF RTC is not running
+    RTC.adjust(DateTime(F(__DATE__), F(__TIME__)));             //Initialize RTC with time of compilation
+  }                                                             //End IF    
+  
+  Serial.print(F("RTC time is set to: "));
+  printNowTime();                                               //Print current RTC time
+  Serial.println();
 
-  // initialize SD card
-  Serial.print("Initializing SD card... ");
-  pinMode(SDPin, OUTPUT);
+// INITIALIZE SD CARD
+//---------------------------------------------------------  
+  pinMode(SDPin, OUTPUT);                                       //Set SDPin as output
+    digitalWrite(SDPin, HIGH);                                  //Activate internal pullup resistor
+  Serial.print(F("Initializing SD Card: "));
+
+  if (!SD.begin(SDPin)) {                                       //IF SD is not found
+    error("Initializing unsuccessful.");                        //Call error function
+  }                                                             //End IF    
+  Serial.println("successful.");                                //Otherwise print success
   
-  // see if the card is present and can be initialized:
-  if (!SD.begin(SDPin)) {
-    error("Initializing unsuccessful.");    
-  }
-  Serial.println("successful.");
-  
-  // create a new data file
-  char filename[] = "LOGGER00.CSV";
-  for (uint8_t i = 0; i < 100; i++) {
-    filename[6] = i/10 + '0';
-    filename[7] = i%10 + '0';
-    if (! SD.exists(filename)) {
-      // only open a new file if it doesn't exist
-      data = SD.open(filename, FILE_WRITE); 
-      break;  // leave the loop!
-    }
-  }  
-  
-  if (! data) {
+// CREATE DATA FILE
+//---------------------------------------------------------  
+  char filename[] = "LOGGER00.CSV";                             //Create dummy filename 
+  for (uint8_t i = 0; i < 100; i++) {                           //FOR 1 to 100
+    filename[6] = i/10 + '0';                                   //Create numbered filenames 
+    filename[7] = i%10 + '0';                                   //And add NULL as escape character
+    
+    if (! SD.exists(filename)) {                                //IF filename does not exists  
+      file = SD.open(filename, FILE_WRITE);                     //Create and open file 
+      break;                                                    //And leave the loop
+    }                                                           //End IF 
+    
+  }                                                             //End FOR
+
+  if (! file) {                                                 //IF file cannot be created, call error function
     error("Could not create data file. Format SD card and try again.");
-  }
+  }                                                             //End IF 
   
   Serial.print("Logging to: ");
   Serial.println(filename);
 
-  // connect to RTC
-  Wire.begin();  
-  if (!RTC.begin()) {
-    data.println("Failed to connect to RTC. Check battery.");
-  #if ECHO_TO_SERIAL
-    Serial.println("Failed to connect to RTC. Check battery.");
-  #endif  //ECHO_TO_SERIAL
-  }
-
-  // print data table header
-  data.println("timestamp, tips");    
-  #if ECHO_TO_SERIAL
-    Serial.println("timestamp, tips");
-  #endif //ECHO_TO_SERIAL
-
-  // indicate correct initialization and start of program with 3 x long LED blink
-  digitalWrite(LEDPin, HIGH);
-  delay(LEDTimeOnLong); 
-  digitalWrite(LEDPin, LOW);
-  delay(LEDTimeOnShort); 
-  digitalWrite(LEDPin, HIGH);
-  delay(LEDTimeOnLong); 
-  digitalWrite(LEDPin, LOW);
-  delay(LEDTimeOnShort); 
-  digitalWrite(LEDPin, HIGH);
-  delay(LEDTimeOnLong); 
-  digitalWrite(LEDPin, LOW);
-
-}
-
-// LOOP (REPEAT)
-//-------------------
-
-void loop(void) {
-
-  // set LED for switch closure feedback (i.e. blink for every detected tip)
-  digitalWrite(LEDPin, LEDState);  // set LED to LEDState 
-
-  // measure time since program start
-  unsigned long MilliSecSinceStart = millis();  // unsigned long allows for maximum value of 49 days
-  unsigned long SecSinceStart = MilliSecSinceStart/1000;
+// WRITE DATA TABLE HEADERS
+//---------------------------------------------------------  
+  Serial.println("timestamp, tips");                            //write header to serial output
+    file.println("timestamp, tips");                            //and data file
   
-  if ((unsigned long)(MilliSecSinceStart - LEDTimeOn) >= LEDTimeOnShort) {
-    LEDState = false;
-  }
-
-  // fetch time from RTC
-  DateTime now;  
-  now = RTC.now();
-
-  digitalRead(SwitchPin);
-  delay(100); 
-  int switchReading = digitalRead(SwitchPin);  
-
-  // switch calculator, looks for switch continuously
-   // Look for low to high
-   if ((SwitchEvent==false)&&(digitalRead(SwitchPin)==HIGH))
-    {
-    SwitchEvent=true;
-  //  SwitchSum+=LowAmt;
-  }
-   if ((SwitchEvent==true)&&(digitalRead(SwitchPin)==LOW)) 
-    {
-      LEDState = true;
-      LEDTimeOn = MilliSecSinceStart;
-      SwitchEvent=false;
-      SwitchSum+=SwitchIncrement;
-    }
+// BLINK AT START
+//---------------------------------------------------------  
+  pinMode(LEDPin, OUTPUT);                                      //LED as output  
+  
+  for (int i = 1; i < 4; i ++) {                                //FOR 1 to 3
+    digitalWrite(LEDPin, HIGH);                                 //Blink LED on/off
+    delay(LEDTimeBlink);                                        //To indicate start of logging
+    digitalWrite(LEDPin, LOW);
+    delay(LEDTimeBlink);                                 
+  }                                                             //End FOR  
+  
+}                                                               //End VOID SETUP
+//==========================================================================================
 
 
-  if (SecSinceStart%60 == 0) {
-    LogState = true;
-    if ((LogState == true)&&((unsigned long)(MilliSecSinceStart - LastLogTime) <= LogDelay)) {
-      LogState = false;
-    }
-    if (LogState == true) {
-      if (now.day() < 10){   // Add a zero, if necessary
-        data.print(0);
-      }
-      data.print(now.day(), DEC);           
-      data.print("/");      
-      if (now.month() < 10){   // Add a zero, if necessary
-        data.print(0);
-      }
-      data.print(now.month(), DEC);      
-      data.print("/");      
-      data.print(now.year(), DEC);      
-      data.print(" ");
-      if (now.hour() < 10){   // Add a zero, if necessary
-        data.print(0);
-      }
-      data.print(now.hour(), DEC);
-      data.print(":");
-      if (now.minute() < 10){   // Add a zero, if necessary
-        data.print(0);
-      }
-      data.print(now.minute(), DEC);      
-      Serial.print(now.minute(), DEC);
-      data.print(":");
-      data.print("00");
-      data.print(", ");  
+//==========================================================================================
+// VOID LOOP
+//------------------------------------------------------------------------------------------
+
+void loop() {
+
+  digitalWrite(LEDPin, LEDState);                               //Set LED to LEDState (= on for tip in last 500 ms, off else)
+  unsigned long DeciSecSinceStart = millis()/100;               //Measure time since program start in deciseconds
+  
+  if ((unsigned long)(DeciSecSinceStart*100 - LEDTimeOn) >= LEDTimeBlink) {
+    LEDState = false;                                           //IF LED blinked for long enough, switch it off
+  }                                                             //End IF
+
+  digitalRead(switchPin);                                       //Read switch status
+  int switchReading = digitalRead(switchPin);                   //Write switch status to switch Reading variable
+  delay(100);                                                   //Wait
+  
+   if ((switchEvent==false)&&(digitalRead(switchPin)==HIGH)) {  //IF status change from low to high occured
+    switchEvent=true;                                           //Set switchEvent TRUE    
+  }                                                             //End IF
+  
+   if ((switchEvent==true)&&(digitalRead(switchPin)==LOW)) {    //IF switch passing detected
+      LEDState = true;                                          //Switch LED on
+      LEDTimeOn = DeciSecSinceStart*100;                        //And set timer
+      switchEvent=false;                                        //Reset switchEvent detector 
+      switchSum+=switchIncrement;                               //Increase switch counter
+    }                                                           //End IF
+
+
+  if ((DeciSecSinceStart/10)%LogInterval == 0) {                //If LogInterval is reached
+    LogState = true;                                            //Set log flag to TRUE
+    
+    if ((LogState == true)&&((unsigned long)(DeciSecSinceStart*100 - LastLogTime) <= LogDelay)) { 
+      LogState = false;                                         //IF last logging not too long ago set log flag to FALSE
+    }                                                           //End IF
+    
+    if (LogState == true) {                                     //IF log flag is TRUE   
+      printNowTime();                                           //Call printNowTime function      
       Serial.print(", ");  
-      data.print(SwitchSum); 
-      Serial.println(SwitchSum); 
-      data.println();
-
-      LastLogTime = MilliSecSinceStart;
-      LogState = false;
-      SwitchSum = 0;
-    }
-  }
-
-//  // print timestamp to data file
-//  data.print(now.year(), DEC);  // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-//  
+        file.print(", ");        
+      Serial.println(switchSum);                                //Print number of switch closures withing logging interval    
+        file.print(switchSum); 
+      LastLogTime = DeciSecSinceStart*100;                      //Update time of most recent logging event
+      LogState = false;                                         //Set log flag to FALSE
+      switchSum = 0;                                            //Reset switchSum
+    }                                                           //End IF
+    
+  }                                                             //End IF
 
 
-
+  file.flush();                                                 //Close file on SD card
   
-  // blink LED to show we are syncing data to the card & updating FAT!
-  //digitalWrite(LEDPin, HIGH);
-  data.flush();
-  //digitalWrite(LEDPin, LOW);
+}                                                               //End VOID LOOP
+//==========================================================================================
+
+
+//==========================================================================================
+// FUNCTION PRINTNOWTIME
+//------------------------------------------------------------------------------------------
+
+void printNowTime() {               //To print current RTC time in DD/MM/YYYY HH:MM:SS format
   
-}
+  DateTime now = RTC.now();         //Fetch time from RTC
+
+  if (now.day() < 10){              //IF days < 10
+    Serial.print(0);                //Print leading zero to serial
+      file.print(0);                //and data file
+  }                                 //End IF
+  Serial.print(now.day(), DEC);     //Print day to serial        
+    file.print(now.day(), DEC);     //and data file        
+  Serial.print("/");                //Print separator to serial  
+    file.print("/");                //and data file 
+  if (now.month() < 10){            //IF month < 10
+    Serial.print(0);                //Print leading zero to serial
+      file.print(0);                //and data file
+  }                                 //End IF
+  Serial.print(now.month(), DEC);   //Print month to serial   
+    file.print(now.month(), DEC);   //and data file  
+  Serial.print(F("/"));             //Print separator to serial   
+    file.print(F("/"));             //and data file   
+  Serial.print(now.year(), DEC);    //Print year to serial    
+    file.print(now.year(), DEC);    //and data file  
+  Serial.print(F(" "));             //Print separator to serial
+    file.print(F(" "));             //and data file
+  if (now.hour() < 10){             //IF hour < 10
+    Serial.print(0);                //Print leading zero to serial
+      file.print(0);                //and data file
+  }                                 //End IF
+  Serial.print(now.hour(), DEC);    //Print hour to serial
+    file.print(now.hour(), DEC);    //and data file
+  Serial.print(F(":"));             //Print separator to serial
+    file.print(F(":"));             //and data file
+  if (now.minute() < 10){           //IF minute < 10
+    Serial.print(0);                //Print leading zero to serial
+      file.print(0);                //and data file
+  }                                 //End IF
+  Serial.print(now.minute(), DEC);  //Print minute
+    file.print(now.minute(), DEC);  //Print minute
+  Serial.print(F(":00"));           //Print separator and seconds
+    file.print(F(":00"));           //Print separator and seconds
+  
+}                                   //End VOID PRINTNOWTIME
+//==========================================================================================
+
+
+//==========================================================================================
+// VOID ERROR
+//------------------------------------------------------------------------------------------
+void error(char const *str) {               //If error function is called
+  Serial.print("error: ");                  //Print to terminal: "error:"
+  Serial.println(str);                      //Followed by specific error string and
+  digitalWrite(LEDPin, HIGH);               //Turn on LED to indicate error and
+  while(1);                                 //Pause the program until reset
+}                                           //End VOID ERROR
+//==========================================================================================
