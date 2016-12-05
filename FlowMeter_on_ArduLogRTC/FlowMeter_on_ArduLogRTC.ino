@@ -166,7 +166,7 @@ void loop() {
       Serial.print(", ");  
         file.print(", ");        
       Serial.println(switchSum);                                //Print number of switch closures withing logging interval    
-        file.print(switchSum); 
+        file.println(switchSum); 
       LastLogTime = DeciSecSinceStart*100;                      //Update time of most recent logging event
       LogState = false;                                         //Set log flag to FALSE
       switchSum = 0;                                            //Reset switchSum
