@@ -23,7 +23,8 @@
 
 // DEFINE PINS
 //---------------------------------------------------------  
-const byte LEDPin = 5;                                          //LED pin 
+const byte LEDPin1 = 5;                                         //LED pin on board
+const byte LEDPin2 = 2;                                         //LED pin on button
 const byte SDPin = 10;                                          //SD pin (CS/SS)
 const byte switchPin = 3;                                       //Reed switch pin 
 
@@ -112,12 +113,15 @@ void setup() {                                                  //START PROGRAM
   
 // BLINK AT START
 //---------------------------------------------------------  
-  pinMode(LEDPin, OUTPUT);                                      //LED as output  
+  pinMode(LEDPin1, OUTPUT);                                     //LED as output  
+  pinMode(LEDPin2, OUTPUT);                                     //LED as output  
   
   for (int i = 1; i < 4; i ++) {                                //FOR 1 to 3
-    digitalWrite(LEDPin, HIGH);                                 //Blink LED on/off
+    digitalWrite(LEDPin1, HIGH);                                //Blink LED on/off
+    digitalWrite(LEDPin2, HIGH);                                //Blink LED on/off
     delay(LEDTimeBlink);                                        //To indicate start of logging
-    digitalWrite(LEDPin, LOW);
+    digitalWrite(LEDPin1, LOW);
+    digitalWrite(LEDPin2, LOW);
     delay(LEDTimeBlink);                                 
   }                                                             //End FOR  
   
@@ -131,7 +135,8 @@ void setup() {                                                  //START PROGRAM
 
 void loop() {
 
-  digitalWrite(LEDPin, LEDState);                               //Set LED to LEDState (= on for tip in last 500 ms, off else)
+  digitalWrite(LEDPin1, LEDState);                              //Set LED to LEDState (= on for tip in last 500 ms, off else)
+  digitalWrite(LEDPin2, LEDState);                               
   unsigned long DeciSecSinceStart = millis()/100;               //Measure time since program start in deciseconds
   
   if ((unsigned long)(DeciSecSinceStart*100 - LEDTimeOn) >= LEDTimeBlink) {
@@ -173,7 +178,6 @@ void loop() {
     }                                                           //End IF
     
   }                                                             //End IF
-
 
   file.flush();                                                 //Close file on SD card
   
@@ -236,7 +240,8 @@ void printNowTime() {               //To print current RTC time in DD/MM/YYYY HH
 void error(char const *str) {               //If error function is called
   Serial.print("error: ");                  //Print to terminal: "error:"
   Serial.println(str);                      //Followed by specific error string and
-  digitalWrite(LEDPin, HIGH);               //Turn on LED to indicate error and
+  digitalWrite(LEDPin1, HIGH);              //Turn on LED to indicate error and
+  digitalWrite(LEDPin2, HIGH);              
   while(1);                                 //Pause the program until reset
 }                                           //End VOID ERROR
 //==========================================================================================
