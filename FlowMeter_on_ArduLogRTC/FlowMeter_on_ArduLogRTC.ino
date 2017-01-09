@@ -51,12 +51,21 @@ unsigned long LastLogTime = 0;                                  //Initialize tim
 void setup() {                                                  //START PROGRAM
   Serial.begin(9600);                                           //Set terminal baud rate to 9600  
   
+  Serial.println ("=============================");             
+  Serial.println ("ArduLog Tipping Bucket Logger");             //Print program name
+  Serial.println ("=============================");             
+  
   pinMode(switchPin, INPUT);                                    //Switch pin as input
     digitalWrite(switchPin, HIGH);                              //Activate internal pullup resistor
 
 // INITIALIZE RTC
 //---------------------------------------------------------  
   Wire.begin();                                                 //Start I2C communication
+
+  Serial.print ("Program last compiled: ");                           //Print compilation date
+  Serial.print (__DATE__);
+  Serial.print (" ");
+  Serial.println (__TIME__);
   
   Serial.print(F("Initializing RTC: "));
   
@@ -105,6 +114,7 @@ void setup() {                                                  //START PROGRAM
   
   Serial.print("Logging to: ");
   Serial.println(filename);
+  Serial.println("");
 
 // WRITE DATA TABLE HEADERS
 //---------------------------------------------------------  
@@ -240,8 +250,8 @@ void printNowTime() {               //To print current RTC time in DD/MM/YYYY HH
 void error(char const *str) {               //If error function is called
   Serial.print("error: ");                  //Print to terminal: "error:"
   Serial.println(str);                      //Followed by specific error string and
-  digitalWrite(LEDPin1, HIGH);              //Turn on LED to indicate error and
-  digitalWrite(LEDPin2, HIGH);              
+  digitalWrite(LEDPin1, HIGH);              //Blink LED on
+  digitalWrite(LEDPin2, HIGH);                                
   while(1);                                 //Pause the program until reset
 }                                           //End VOID ERROR
 //==========================================================================================
