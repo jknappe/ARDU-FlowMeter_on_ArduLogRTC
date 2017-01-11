@@ -10,7 +10,7 @@
 //===========================================================================================
 
 //===========================================================================================
-// SETUP
+// PREAMBLE
 //-------------------------------------------------------------------------------------------
 
 // INCLUDE LIBRARIES
@@ -51,8 +51,8 @@ unsigned long LastLogTime = 0;                                  //Initialize tim
 void setup() {                                                  //START PROGRAM
   Serial.begin(9600);                                           //Set terminal baud rate to 9600  
   
-  Serial.println ("=============================");             
-  Serial.println ("ArduLog Tipping Bucket Logger");             //Print program name
+  Serial.println ("=============================");             //Print program name             
+  Serial.println ("ArduLog Tipping Bucket Logger");
   Serial.println ("=============================");             
   
   pinMode(switchPin, INPUT);                                    //Switch pin as input
@@ -62,9 +62,9 @@ void setup() {                                                  //START PROGRAM
 //---------------------------------------------------------  
   Wire.begin();                                                 //Start I2C communication
 
-  Serial.print ("Program last compiled: ");                           //Print compilation date
+  Serial.print ("Program last compiled: ");                     //Print compilation date
   Serial.print (__DATE__);
-  Serial.print (" ");
+  Serial.print (", ");
   Serial.println (__TIME__);
   
   Serial.print(F("Initializing RTC: "));
@@ -116,7 +116,7 @@ void setup() {                                                  //START PROGRAM
   Serial.println(filename);
   Serial.println("");
 
-// WRITE DATA TABLE HEADERS
+// WRITE DATA FILE HEADERS
 //---------------------------------------------------------  
   Serial.println("timestamp, tips");                            //write header to serial output
     file.println("timestamp, tips");                            //and data file
@@ -167,7 +167,6 @@ void loop() {
       switchEvent=false;                                        //Reset switchEvent detector 
       switchSum+=switchIncrement;                               //Increase switch counter
     }                                                           //End IF
-
 
   if ((DeciSecSinceStart/10)%LogInterval == 0) {                //If LogInterval is reached
     LogState = true;                                            //Set log flag to TRUE
