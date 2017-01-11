@@ -1,0 +1,159 @@
+
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="chrome=1">
+    <title>ArduFlow by jknappe</title>
+
+    <link rel="stylesheet" href="/ArduFlow/assets/css/style.css?v=1551a1f5729a0ab8b004a9a58948b29679bad477">
+    <meta name="viewport" content="width=device-width">
+    <!--[if lt IE 9]>
+    <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+  </head>
+  <body>
+    <div class="wrapper">
+      <header>
+        <h1>ArduFlow</h1>
+        <p>An Arduino based tipping bucket flow meter</p>
+
+        
+          <p class="view"><a href="https://github.com/jknappe/ArduFlow">View the Project on GitHub <small></small></a></p>
+        
+
+        
+
+        
+      </header>
+      <section>
+
+      <h1><a id="Tipping_bucket_flow_meter_0"></a>Tipping bucket flow meter</h1>
+<p>Project to measure water flow with a tipping bucket flow meter. The tipping bucket is equipped with a magnetic reed switch and an Arduino-based datalogger (ArduLogRTC shield) powered by a mobile phone power bank.</p>
+<p>Author: Jan Knappe<br>
+Contact: <a href="mailto:jan.knappe@tcd.ie">jan.knappe@tcd.ie</a></p>
+<h2><a id="Datalogger_6"></a>Datalogger</h2>
+<h3><a id="Components_7"></a>Components</h3>
+<h4><a id="ArduLogRTC_shield_8"></a>ArduLogRTC shield</h4>
+<p>The datalogger is based on the Arduino Uno architecture using the ATMega328 microcontroller integrated on the ArduLogRTC shield (available from <a href="http://www.hobbyelectronics.co.uk">www.hobbyelectronics.co.uk</a>). The ArduLogRTC shield works on 3.3V and is equipped with a micro SD card slot for storing the data and and DS1338 real time clock (RTC) with CR1225 battery for providing the timestamp. A complete schematic of the shield can be found here: <a href="http://www.hobbytronics.co.uk/datasheets/ht/ardulog_rtc.pdf">http://www.hobbytronics.co.uk/datasheets/ht/ardulog_rtc.pdf</a><br>
+Soldered onto the ArduLogRTC are three polarized connectors:</p>
+<ul>
+<li>2-pin RST connector for the reset button</li>
+<li>6-pin DAT connector for the reed switch and status LED</li>
+<li>6-pin PWR connector for powering the board from VOLT (see below) or communication via FTDI (see below)<br>
+<a href="https://s25.postimg.org/p1pv93xhb/Ardu_Log_RTC.jpg"><img src="https://s25.postimg.org/p1pv93xhb/Ardu_Log_RTC.jpg" alt="FTDI breakout"></a></li>
+</ul>
+<h4><a id="VOLT_LiPo_USB_charger_16"></a>VOLT Li-Po USB charger</h4>
+<p>Power is supplied to the ArduLogRTC via the VOLT USB Li-Polymer Battery Charger Board from MikroElektronika. The VOLT board can be either powered from a power bank via a micro-B USB cable or via direct connection to a Li-Po cell or battery. THe output of the VOLT board is 5V but that is tolerated by the ArduLogRTC. A complete schematic of the shield can be found here: <a href="http://docs-europe.electrocomponents.com/webdocs/1407/0900766b81407448.pdf">http://docs-europe.electrocomponents.com/webdocs/1407/0900766b81407448.pdf</a><br>
+<a href="https://s25.postimg.org/6jliovfpb/VOLT_board.jpg"><img src="https://s25.postimg.org/6jliovfpb/VOLT_board.jpg" alt="FTDI breakout"></a></p>
+<h4><a id="Power_supply_20"></a>Power supply</h4>
+<p>As power supply for the project, a 20,000 mAh power bank is used and connected via USB to the VOLT board. Since this is a low power consumption project (~ 25 mA), when selecting a power bank, care should be taken only to use power banks without automatic turn off functionality; many available power banks (which are mostly designed to charge mobile phones or tablets) will automatically turn themselves off when not enough output current is drawn and, thus, also turn off the data logger.<br>
+<a href="https://s25.postimg.org/6xmuogzsv/Power_Bank.jpg"><img src="https://s25.postimg.org/6xmuogzsv/Power_Bank.jpg" alt="FTDI breakout"></a></p>
+<h4><a id="Communication_24"></a>Communication</h4>
+<p>The datalogger is programmed using a FTDI breakout for communication and troubleshooting with a PC or laptop. The FTDI breakout is connected via USB to a computer and via a 6-pin polarized connector to the PWR input connector on the ArduLogRTC shield.<br>
+<a href="https://s25.postimg.org/4zblcqhxb/FTDI_breakout.jpg"><img src="https://s25.postimg.org/4zblcqhxb/FTDI_breakout.jpg" alt="FTDI breakout"></a></p>
+<h4><a id="Enclosure_28"></a>Enclosure</h4>
+<p>The enclosure used for this project is a 230mm x 150mm x 85mm waterproof plastic enclosure (purchased from AliExpress). It gives enough space for housing the logger, the battery, and interface connectors.<br>
+<a href="https://s25.postimg.org/8hnl94itb/enclosure.jpg"><img src="https://s25.postimg.org/8hnl94itb/enclosure.jpg" alt="Enclosure"></a></p>
+<h4><a id="Peripherals_32"></a>Peripherals</h4>
+<p>For building the project, several other parts are needed:</p>
+<ul>
+<li>a waterprrof (enclosed) normal-open reed switch with corresponding magnet (e.g. from ASSEMtech)</li>
+<li>female and male waterproof 2-pin panel connector</li>
+<li>a push button (for logger reset) with integrated LED (used as status LED)`</li>
+<li>a micro SD card to store the data on</li>
+<li>several polarized connectors (male and female)</li>
+<li>heat shrink, jumper cables, panel mount screws</li>
+<li>equipment for soldering and glueing the components<br>
+<a href="https://s25.postimg.org/ty2osace7/peripherals.jpg"><img src="https://s25.postimg.org/ty2osace7/peripherals.jpg" alt="Peripherals"></a></li>
+</ul>
+<h3><a id="Wiring_43"></a>Wiring</h3>
+<p>The individual components are wired as follows:<br>
+<a href="https://s25.postimg.org/y0xulqeyn/Ardu_Log_Schematics_161212_schem.jpg"><img src="https://s25.postimg.org/y0xulqeyn/Ardu_Log_Schematics_161212_schem.jpg" alt="Wiring diagram"></a></p>
+<h3><a id="Logger_program_47"></a>Logger program</h3>
+<p>A good point to start and understanding Arduino and its functionality is the “Getting Started with Arduino Guide”:<br>
+<a href="https://www.arduino.cc/en/Guide/HomePage">https://www.arduino.cc/en/Guide/HomePage</a></p>
+<h4><a id="General_principle_51"></a>General principle</h4>
+<p>The latest Arduino sketch can be downloaded by following the link to the corresponding GitHub repository on the left.<br>
+The Arduino is programmed in a way that it continously scans for the port where the reed switch is attached to (<code>switchPin = 3</code>) with a frequency of 10 Hz. Once a switch closure (i.e. magnet is passing) is detected, the <code>switchSum</code> counter is increased by one and an internal timer of 1 second is activated in which any change in switch status is ignored. This prevents the logging of multiple tipping events per second which could be the case if, e.g. the tipping bucket gets stuck. Also, changes in switch status from open to closed are ignored. If a tipping is recorded, the LED on the ArduLogRTC board and the status LED on the push/reset button are blinking for 0.5 seconds.<br>
+Every minute, the sum of tips is saved into a CSV file on the SD card together with a time stamp provided by the RTC.</p>
+<h4><a id="Preamble_56"></a>Preamble</h4>
+<ul>
+<li><strong>LIBRARIES:</strong> Three external libraries are needed for the logger to work, the ‘Wire’ and ‘RTClib’ libraries are used for communicating with the RTC, and the ‘SD’ library is used for being able to read and write data from the SD card. A guide to installing missing libraries can be found here: <a href="https://www.arduino.cc/en/Guide/Libraries">https://www.arduino.cc/en/Guide/Libraries</a></li>
+<li><strong>PINS:</strong> The logger uses founr pins for data input and output. <code>LEDPin1 = 5</code> is connected to the inbuilt LED on the ArduLogRTC board, <code>LEDPin2 = 2</code> is connected to the status LED in the push button on the panel, <code>SDPin = 10</code> is the chip select pin for the SD card module, and <code>switchPin = 3</code> reads the status of the reed switch.</li>
+<li><strong>VARIABLES:</strong> Several variables control and monitor the switch status and the logging interval.</li>
+</ul>
+<h4><a id="VOID_SETUP_61"></a>VOID SETUP()</h4>
+<ul>
+<li><strong>INITIALIZE RTC:</strong> The sketch checks if the RTC is available and returns the current RTC time in the serial monitor (see below). If the RTC cannot be detected, the logger stops and an error is indicated by a constant lighting of the status LED. Check the RTC and reset the logger.</li>
+<li><strong>INITIALIZE SD CARD AND CREATE DATA FILE:</strong> The sketch checks if an SD is inserted and creates a data file. Every time the logger is powered on or reset, a new numbered data file is generated (LOGGER00.CSV to LOGGER99.CSV). In case, no data file can be created (e.g. no SD card is inserted or there are already 100 data files on the card) the logger stops and an error is indicated by a constant lighting of the status LED. Check if an SD card is inserted and formatted correctly and reset the logger. IMPORTANT: For best performance, when formatting the SD card, DO NOT use the built-in formatting program of the operation system. Only use the offical formatting tool from the SD Card Foundation (<a href="https://www.sdcard.org/downloads/formatter_4/">https://www.sdcard.org/downloads/formatter_4/</a>) and format the card in FAT format.</li>
+<li><strong>BLINK AT START:</strong> To indicate a correct initialization of the logger, the status LED will blink three times and the logging begins.</li>
+</ul>
+<h4><a id="VOID_LOOP_66"></a>VOID LOOP()</h4>
+<ul>
+<li>The sketch will continously monitor the reed switch for a status change from open to closed. If such a change is detected, a ‘tip’ is counted. Multiple tips within less than one seconds are counted only as one single tip (delay in state change detection). Every full minute, the sum of detected tips is written to the data file.</li>
+</ul>
+<h4><a id="Functions_69"></a>Functions</h4>
+<ul>
+<li><strong>PRINTNOWTIME:</strong> The PRINTNOWTIME function will read the current time from the RTC and write it to the data file as well as the serial monitor.</li>
+<li><strong>ERROR:</strong> The ERROR function is called if any initialization after starting the logger fails. It cause the logger to stop and the status LED is illuminated continously until the logger is reset or disconnected from power. An error message will be displayed in the serial monitor if connected.</li>
+</ul>
+<h3><a id="Setting_up_the_logger_73"></a>Setting up the logger</h3>
+<p>The logger should come with the sketch already uploadedand is ready to log once power, the SD card, and reed switch are connected. However, for setting the correct time on the RTC, adjusting the loggin parameters, or general testing or troubleshooting, the logger might need to be connected to a computer.<br>
+This is done by replacing the 6-pin power supply cable from the VOLT board on the PWR connector with the included 6-pin FTDI to USB converter (see above) connected to the computer.<br>
+Using the Arduino IDE (available at <a href="https://www.arduino.cc/en/Main/Software">https://www.arduino.cc/en/Main/Software</a>), sketches can be uploaded to the logger and the logger status can be read out with the serial monitor.</p>
+<h4><a id="Connect_via_Arduino_IDE_78"></a>Connect via Arduino IDE</h4>
+<p>After starting the Arduino IDE, make sure to select the correct COM port under TOOLS -&gt; PORT. If unsure which the correct COM port is or if the correct COM port is not displayed, check in the Device Manager and install or update the corresponding driver. As board choose “Arduino/Genuino UNO” under TOOLS -&gt; BOARD.<br>
+To upload any sketch to the Arduino, open the sketch in the Arduino IDE and upload via SKETCH -&gt; UPLOAD or by pressing the upload button.<br>
+If the <em>ARDU-FlowMeter_on_ArduLogRTC</em> sketch is running on the logger, the logger status and further information can be retrieved in the serial monitor (TOOLS -&gt; SERIAL MONITOR, choos baud rate 9600).<br>
+If the sketch is running correctly and RTC and SD card could be initialized successfully, the serial monitor should display something like:</p>
+<pre><code>=============================
+ArduLog Tipping Bucket Logger
+=============================
+Program last compiled: Jan  9 2017 19:00:04
+Initializing RTC: successful
+RTC time is set to: 11/01/2017 19:36:00
+Initializing SD Card: successful.
+Logging to: LOGGER45.CSV
+</code></pre>
+<p>Logging starts and the data are saved on the SD card in the file specified above and also mirrored to the serial monitor:</p>
+<pre><code>timestamp, tips
+11/01/2017 19:37:00, 0
+11/01/2017 19:38:00, 0
+11/01/2017 19:39:00, 0
+11/01/2017 19:40:00, 0
+</code></pre>
+<h4><a id="Setting_the_RTC_102"></a>Setting the RTC</h4>
+<p>The RTC is equipped with a backup battery, that will keep the correct time stamp even when the logger is powered off. However, due to drift (up to a few seconds per hour), change of location (new time zone), or leap years, it might be necessary to reset the time on the RTC.<br>
+To change the RTC time, upload the RTC sketch proved by the manufacturer: <a href="http://www.hobbytronics.co.uk/download/ht-rtc.zip">http://www.hobbytronics.co.uk/download/ht-rtc.zip</a><br>
+The clock date and time can now be set using the Arduino Serial Monitor program (or a similar terminal program) set to 9600 baud. Send the date/time by sending a command in the format:<br>
+<code>date DD/MM/YY HH:MM:SS</code><br>
+After setting the RTC, upload the <em>ARDU-FlowMeter_on_ArduLogRTC</em> sketch again and check in the serial monitor if the time and date are set correctly.</p>
+<h2><a id="Tipping_bucket_109"></a>Tipping bucket</h2>
+<p>The tipping bucket is a double-chamber device that will allow measuring the flow by recording the number of “tips” in a given time. This is achieved by attaching a magnet onto the tipping bucket that will trigger a “switch closed” signal on a reed switch  every time the magnet passes in fron tof the stationary switch (which could be, e.g., be attached to a wall piece of wood in direct proximity of the tipping bucket).<br>
+In this project, the tipping bucket is designed to measure flows up to 5 cubic meter per hour. In principle, the bucket should be sized to allow enough time for filling the bucket and tipping over (~ 1 s is a good startng point). A small bucket might fill to fast and is prone to measure inaccurately results due to splashing.</p>
+<h3><a id="Design_113"></a>Design</h3>
+<p>The tipping bucket is built from ABS plastic sheets cut into size and glued with PVC cement and acetone.<br>
+<a href="https://s25.postimg.org/fhffdpmwv/Tipping_Bucket.jpg"><img src="https://s25.postimg.org/fhffdpmwv/Tipping_Bucket.jpg" alt="Tipping Bucket Drawing"></a><br>
+<a href="https://s25.postimg.org/46crpcg1r/Tipping_Bucket_1600ml.jpg"><img src="https://s25.postimg.org/46crpcg1r/Tipping_Bucket_1600ml.jpg" alt="Tipping Bucket Drawing"></a><br>
+In principle, the tipping bucket could be made from any suitable material and in any suitable size.<br>
+<a href="https://s25.postimg.org/98yoxvepr/tipping_bucket_pics.jpg"><img src="https://s25.postimg.org/98yoxvepr/tipping_bucket_pics.jpg" alt="Tipping Bucket Drawing"></a></p>
+<h2><a id="Funding_120"></a>Funding</h2>
+<p>Development of this tipping bucket flow meter was funded by BORDA e.V. (Bremen Overseas Research &amp; Development Association) and The University of Dublin, Trinity College Dublin (TCD), Department of Civil, Structural, and Environmental Engineering.<br>
+<a href="http://www.borda-net.org/"><img src="https://s25.postimg.org/fswvqh3cv/logos.jpg" alt="Logos"></a></p>
+
+
+      </section>
+      <footer>
+        
+        <p>This project is maintained by <a href="https://github.com/jknappe">jknappe</a></p>
+        
+        <p><small>Hosted on GitHub Pages &mdash; Theme by <a href="https://github.com/orderedlist">orderedlist</a></small></p>
+      </footer>
+    </div>
+    <script src="/ArduFlow/assets/js/scale.fix.js"></script>
+
+
+  
+  </body>
+</html>
