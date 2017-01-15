@@ -2,10 +2,12 @@
 // PREAMBLE
 //-------------------------------------------------------------------------------------------
 
-//Logger type: Arduino Uno on ArduLogRTC shield (http://www.hobbytronics.co.uk/ardulog-rtc)
+//Logger type: Arduino Uno on ArduLogRTC shield
  
 //Program author: Jan Knappe
 //Contact: jan.knappe@tcd.ie
+
+//RTC programming functionality implemented from hoobytronics.co.uk
 
 //===========================================================================================
 
@@ -18,15 +20,9 @@
 #include <Wire.h>                                               //Connecting to RTC
 #include <RTClib.h>                                             //Using RTC for timestamp
   RTC_DS1307 RTC;                                               //Define RTC object  
+#define RTC_ADDRESS 0x68                                        //Define RTC address
 #include <SD.h>                                                 //Communicate with SD card  
   File file;                                                    //Defining File object for SD card
-
-
-
-
-#define RTC_ADDRESS 0x68
-const int NUMBER_OF_DIGITS_IN_VALUE = 1; //only single digits
-char buffer[NUMBER_OF_DIGITS_IN_VALUE+1];
 
 // DEFINE PINS
 //---------------------------------------------------------  
@@ -34,31 +30,6 @@ const byte LEDPin1 = 5;                                         //LED pin on boa
 const byte LEDPin2 = 2;                                         //LED pin on button
 const byte SDPin = 10;                                          //SD pin (CS/SS)
 const byte switchPin = 3;                                       //Reed switch pin 
-
-
-
-
-
-byte bcdToDec(byte val)  {
-// Convert binary coded decimal to normal decimal numbers
-  return ( (val/16*10) + (val%16) );
-}
-
-byte decToBcd(byte val){
-// Convert normal decimal numbers to binary coded decimal
-  return ( (val/10*16) + (val%10) );
-}
-
-unsigned long currentTime;
-unsigned long cloopTime;
-char command_string[60];       // string to store command
-unsigned char command_index;
-char rtc_datetime[17];         // string to store date/time from RTC
-char i;
-
-
-
-
 
 // DEFINE VARIABLES
 //---------------------------------------------------------  
@@ -72,9 +43,10 @@ boolean LogState = false;                                       //Define trigger
 int LogInterval = 60;                                           //Define interval for logging to SD card (in seconds)
 int LogDelay = 1000;                                            //Define delay to prevent multiple logging events per seconds
 unsigned long LastLogTime = 0;                                  //Initialize time since last logging
-
-
-  
+char command_string[60];                                        //Define string to store RTC command
+unsigned char command_index = 0;                                //Define command index
+char rtc_datetime[17];                                          //Define string to store RTC time
+char i = 0;                                                     //Define index  
 //==========================================================================================
 
 
@@ -112,40 +84,13 @@ void setup() {                                                  //START PROGRAM
   if (!RTC.isrunning()) {                                       //IF RTC is not running
     RTC.adjust(DateTime(F(__DATE__), F(__TIME__)));             //Initialize RTC with time of compilation
   }                                                             //End IF  
-  //RTC.adjust(DateTime(F(__DATE__), F(__TIME__)));             //Initialize RTC with time of compilation  
   
   Serial.print(F("RTC time is set to: "));
   printNowTime();                                               //Print current RTC time
   Serial.println();
-
-
-
-
-  int i;
-  command_index=0;
-  command_string[0]=0x00;
-
-
-
-
-
-  Serial.println(F("Enter any key to change RTC time.")); 
-  delay(1000);
-  Serial.print(F("X "));
-  delay(1000);
-  Serial.print(F("X "));
-  delay(1000);
-  Serial.println(F("X"));
-  delay(1000);
-
-         
-  Serial.print(F("RTC time is set to: "));
-  printNowTime();                                               //Print current RTC time
-  Serial.println();
+  Serial.println(F("To change RTC time, type: date DD/MM/YY HH:MM:SS"));
   
-
-
-    
+  command_string[0]=0x00;                                       //Initialize input command string    
 
 // INITIALIZE SD CARD
 //---------------------------------------------------------  
@@ -255,29 +200,22 @@ void loop() {
 
   file.flush();                                                 //Close file on SD card
 
-
-  if (Serial.available() > 0) 
-   {
-      char inByte = Serial.read();
-      command_string[command_index] = inByte;
-      command_index++;      
-      if(inByte==13) 
-      {      
-         if(command_string[0]=='d' && command_string[1]=='a' && command_string[2]=='t' && command_string[3]=='e' && command_index>21)
-         {
-            command_index=0;
-            Serial.println(command_string);
-            //remove "date " from beginning of string
-            for(i=0;i<17;i++) command_string[i]=command_string[i+5];
-            setDateTime(command_string);
-         }   
-      }
-      if(command_index>=59) command_index=0;
-   }
-
-
-
-  
+  if (Serial.available() > 0) {                                 //IF serial data (for setting RTC) is available
+    char inByte = Serial.read();                                //Safe data in buffer  
+    command_string[command_index] = inByte;                     //And write buffer string to receiving string position
+      command_index++;                                          //Increase string position index
+      
+    if (inByte==13) {                                           //IF 13 characters are read in
+      if(command_string[0]=='d' && command_string[1]=='a' && command_string[2]=='t' && command_string[3]=='e' && command_index>21) {
+        command_index=0;                                        //And string starts with "date" 
+        for(i=0;i<17;i++) command_string[i]=command_string[i+5];//Remove "date" from string
+        setDateTime(command_string);                            //And pass remaining command to setDateTime() function
+      }                                                         //End IF
+    }                                                           //End IF
+      
+    if(command_index>=59) command_index=0;                      //IF command is too long, circle to beginning
+   
+  }                                                             //End IF  
   
 }                                                               //End VOID LOOP
 //==========================================================================================
@@ -335,7 +273,7 @@ void printNowTime() {               //To print current RTC time in DD/MM/YYYY HH
 //==========================================================================================
 // VOID ERROR
 //------------------------------------------------------------------------------------------
-void error(char const *str) {               //If error function is called
+void error(char const *str) {               //Error function
   Serial.print("error: ");                  //Print to terminal: "error:"
   Serial.println(str);                      //Followed by specific error string and
   digitalWrite(LEDPin1, HIGH);              //Blink LED on
@@ -345,55 +283,55 @@ void error(char const *str) {               //If error function is called
 //==========================================================================================
 
 
-void setDateTime(char datetime[]){
-  
-  // Takes a char string of the format
-  // DD/MM/YY HH:MM:SS
-  // and uses this to set the date/time of the RTC
-
-  byte second;
-  byte minute;
+//==========================================================================================
+// VOID SETDATETIME
+//------------------------------------------------------------------------------------------
+void setDateTime(char datetime[]){          //Setting date and time with serial command
+  byte second;                              //Takes input string DD/MM/YY HH:MM:SS
+  byte minute;                              //To set RTC
   byte hour;
   byte weekDay;
   byte monthDay;
   byte month;
   byte year;
 
-  monthDay = datetime[0]-48;
-  monthDay = monthDay*10 + datetime[1]-48;   
-     
+  monthDay = datetime[0]-48;                //Convert input strings to numbers
+  monthDay = monthDay*10 + datetime[1]-48;        
   month = datetime[3]-48;
-  month = month*10 + datetime[4]-48; 
-     
+  month = month*10 + datetime[4]-48;      
   year = datetime[6]-48;
-  year = year*10 + datetime[7]-48;     
-      
+  year = year*10 + datetime[7]-48;           
   hour = datetime[9]-48;
-  hour = hour*10 + datetime[10]-48;   
-    
+  hour = hour*10 + datetime[10]-48;       
   minute = datetime[12]-48;
-  minute = minute*10 + datetime[13]-48; 
-    
+  minute = minute*10 + datetime[13]-48;     
   second = datetime[15]-48;
   second = second*10 + datetime[16]-48;     
   
-  Wire.beginTransmission(RTC_ADDRESS);
-  Wire.write(0x00); //stop Oscillator
-
-  Wire.write(decToBcd(second));
-  Wire.write(decToBcd(minute));
-  Wire.write(decToBcd(hour));
-  Wire.write(decToBcd(weekDay));
-  Wire.write(decToBcd(monthDay));
-  Wire.write(decToBcd(month));
-  Wire.write(decToBcd(year));
-
-  Wire.write(0x00); //start 
-
+  Wire.beginTransmission(RTC_ADDRESS);      //Communicate with RTC
+    Wire.write(0x00);                       //Stop RTC oscillator
+      Wire.write(decToBcd(second));         //Write date and time to RTC using conversion function
+      Wire.write(decToBcd(minute));
+      Wire.write(decToBcd(hour));
+      Wire.write(decToBcd(weekDay));
+      Wire.write(decToBcd(monthDay));
+      Wire.write(decToBcd(month));
+      Wire.write(decToBcd(year));
+    Wire.write(0x00);                       //Start RTC oscillator
   Wire.endTransmission();  
 
-  Serial.print(F("RTC time is set to: "));
-  printNowTime();                                               //Print current RTC time
+  Serial.print(F("RTC time is set to: ")); //Print current RTC time
+  printNowTime();                          
   Serial.println();
   
-}
+}                                          //End VOID SETDATETIME
+//==========================================================================================
+
+
+//==========================================================================================
+// VOID DECTOBCD
+//------------------------------------------------------------------------------------------
+byte decToBcd(byte val){                   //Convert decimal number to binary coded decimal
+  return ( (val/10*16) + (val%10) );
+}                                          //End VOID DECTOBCD
+//==========================================================================================
