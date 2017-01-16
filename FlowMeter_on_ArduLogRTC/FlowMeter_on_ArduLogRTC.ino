@@ -45,7 +45,7 @@ int LogDelay = 1000;                                            //Define delay t
 unsigned long LastLogTime = 0;                                  //Initialize time since last logging
 char command_string[60];                                        //Define string to store RTC command
 unsigned char command_index = 0;                                //Define command index
-char rtc_datetime[17];                                          //Define string to store RTC time
+char rtc_datetime[14];                                          //Define string to store RTC time
 char i = 0;                                                     //Define index  
 //==========================================================================================
 
@@ -88,7 +88,7 @@ void setup() {                                                  //START PROGRAM
   Serial.print(F("RTC time is set to: "));
   printNowTime();                                               //Print current RTC time
   Serial.println();
-  Serial.println(F("To change RTC time, type: date DD/MM/YY HH:MM:SS"));
+  Serial.println(F("To change RTC time, type: date DD/MM/YY HH:MM"));
   
   command_string[0]=0x00;                                       //Initialize input command string    
 
@@ -205,12 +205,15 @@ void loop() {
     command_string[command_index] = inByte;                     //And write buffer string to receiving string position
       command_index++;                                          //Increase string position index
       
-    if (inByte==13) {                                           //IF 13 characters are read in
-      if(command_string[0]=='d' && command_string[1]=='a' && command_string[2]=='t' && command_string[3]=='e' && command_index>21) {
-        command_index=0;                                        //And string starts with "date" 
+    if (inByte==13) {                                           //IF carriage return is entered (code 13) and command starts with "date" and has 19 characters
+      if(command_string[0]=='d' && command_string[1]=='a' && command_string[2]=='t' && command_string[3]=='e' && command_index>18) {
+        command_index=0;                                        //Reset string counter 
         for(i=0;i<17;i++) command_string[i]=command_string[i+5];//Remove "date" from string
         setDateTime(command_string);                            //And pass remaining command to setDateTime() function
       }                                                         //End IF
+      else {                                                    //If command has not specified structure
+        Serial.println("Unknown command.");                     //Print "Unknown command."
+      }                                                         //End ELSE
     }                                                           //End IF
       
     if(command_index>=59) command_index=0;                      //IF command is too long, circle to beginning
@@ -305,8 +308,8 @@ void setDateTime(char datetime[]){          //Setting date and time with serial 
   hour = hour*10 + datetime[10]-48;       
   minute = datetime[12]-48;
   minute = minute*10 + datetime[13]-48;     
-  second = datetime[15]-48;
-  second = second*10 + datetime[16]-48;     
+  second = 0;
+  second = 0;     
   
   Wire.beginTransmission(RTC_ADDRESS);      //Communicate with RTC
     Wire.write(0x00);                       //Stop RTC oscillator
