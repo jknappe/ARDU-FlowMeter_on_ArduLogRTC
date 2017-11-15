@@ -62,7 +62,7 @@ void setup() {                                                  //START PROGRAM
   Serial.println ("==============================");             
   
   pinMode(switchPin, INPUT);                                    //Switch pin as input
-    digitalWrite(switchPin, HIGH);                              //Activate internal pullup resistor
+    digitalWrite(switchPin, HIGH);                              //Activate iternal pullup resistor
 
 // INITIALIZE RTC
 //---------------------------------------------------------  
